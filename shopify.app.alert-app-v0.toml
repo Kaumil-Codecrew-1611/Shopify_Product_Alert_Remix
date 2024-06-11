@@ -1,0 +1,29 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "defe5dd0f037b49d15c2cb306f8e1666"
+name = "alert-app-v0"
+handle = "alert-app-v0"
+application_url = "https://weapon-violin-finished-cave.trycloudflare.com"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = true
+dev_store_url = "quickstart-7c1b6a1b.myshopify.com"
+include_config_on_deploy = true
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_products,write_products"
+
+[auth]
+redirect_urls = [
+  "https://weapon-violin-finished-cave.trycloudflare.com/auth/callback",
+  "https://weapon-violin-finished-cave.trycloudflare.com/auth/shopify/callback",
+  "https://weapon-violin-finished-cave.trycloudflare.com/api/auth/callback"
+]
+
+[webhooks]
+api_version = "2024-04"
+
+[pos]
+embedded = false
