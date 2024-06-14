@@ -1,0 +1,24 @@
+.Polaris-FullscreenBar {
+    border-radius: 10px !important;
+}
+
+.Polaris-FullscreenBar>.Polaris-FullscreenBar__BackAction {
+    border-top-left-radius: 10px !important;
+    border-bottom-left-radius: 10px !important;
+}
+
+.Polaris-EmptyState__ImageContainer {
+    margin-bottom: 40px;
+}
+
+.Polaris-EmptyState__ImageContainer img {
+    width: 40%;
+}
+
+.Polaris-Text--root.Polaris-Text--headingMd.Polaris-Text--block.Polaris-Text--center {
+    white-space: nowrap;
+}
+
+.Polaris-ShadowBevel>.Polaris-Box>.Polaris-Box {
+    padding-bottom: 20px;
+}

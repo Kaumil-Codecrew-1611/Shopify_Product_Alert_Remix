@@ -1,9 +1,10 @@
 import { json } from "@remix-run/node";
-import { Form, useLoaderData } from "@remix-run/react";
+import { Form, useLoaderData, useNavigate } from "@remix-run/react";
 import {
     Button,
     Card,
     Frame,
+    FullscreenBar,
     Grid,
     Layout,
     Page,
@@ -17,6 +18,8 @@ import cron from "node-cron";
 import { useCallback, useEffect, useState } from "react";
 import axiosInstance from "../server/axios.js";
 import prisma from "../server/db.server.js";
+
+
 import { apiVersion, authenticate } from "../shopify.server";
 
 const sendProducts = async (shop, accessToken, emailConfig) => {
@@ -46,10 +49,11 @@ const sendProducts = async (shop, accessToken, emailConfig) => {
             shop_name: shopDetails.shop.name,
             shop_url: shopDetails.shop.domain,
             email: emailConfig.email,
-            shop_owner: shopDetails?.shop_owner
+            shop_owner: shopDetails?.shop_owner,
+            frequency: emailConfig.frequency,
+            unit: emailConfig.frequencyUnit
         };
         const response = await axiosInstance.post("/store-product", { shop_information, productData: filteredData });
-        await axiosInstance.post("/change-time", { set_minute: emailConfig.frequency, set_unit: emailConfig.frequencyUnit, shop_information });
         return response;
     } catch (error) {
         console.log({ error: error.response.data }, "Error sending details");
@@ -63,7 +67,9 @@ export const loader = async ({ request }) => {
         const emailConfig = await prisma.emailConfiguration.findFirst({ where: { shop } });
         if (emailConfig) {
             cron.schedule('* * * * *', async () => {
-                await sendProducts(shop, accessToken, emailConfig);
+                setTimeout(async () => {
+                    await sendProducts(shop, accessToken, emailConfig);
+                }, 5000)
             });
         }
         return ({ shop, emailConfig });
@@ -81,7 +87,7 @@ export const action = async ({ request }) => {
         const formData = await request.formData();
         const email = formData.get("email");
         const threshold = parseInt(formData.get("threshold"));
-        const frequency = parseInt(formData.get("frequency")); // Ensure frequency is parsed correctly
+        const frequency = parseInt(formData.get("frequency"));
         const frequencyUnit = formData.get("frequencyUnit");
 
         console.log({ email, threshold, frequency, frequencyUnit }, "Received form data");
@@ -98,7 +104,7 @@ export const action = async ({ request }) => {
 
         return json({ message: "Form submitted successfully!", email, threshold, frequency, frequencyUnit });
     } catch (error) {
-        console.error("Error storing form data in Prisma:", error);
+        console.error("Error storing form data in Prisma:", error.message);
         return json({ error: "An error occurred while processing the form." }, 500);
     }
 };
@@ -126,16 +132,25 @@ export default function Index() {
     const [toastContent, setToastContent] = useState("");
     const [errors, setErrors] = useState({});
     const maxFrequency = getMaxFrequency();
-
+    const navigate = useNavigate()
     useEffect(() => {
         if (data?.emailConfig) {
             setFormDataSaved(data.emailConfig);
         }
     }, [data]);
 
-    console.log(formDataSaved, ":::::formDataSaved");
 
     const toggleToastActive = useCallback(() => setToastActive((active) => !active), []);
+    // const activeMails = async (event, active) => {
+    //     try {
+    //         event.preventDefault();
+    //         setFormDataSaved((prev) => ({ ...prev, active }));
+    //         const data = await emailStatus(formDataSaved)
+    //         setFormDataSaved(data)
+    //     } catch (error) {
+    //         console.error(error, "Error in DisableMail")
+    //     }
+    // }
 
     const handleFormChange = useCallback(
         (field) => (value) => {
@@ -183,21 +198,36 @@ export default function Index() {
     return (
         <Frame>
             {toastMarkup}
-
-            <Page title="Setting Configuration">
+            <Page>
                 <Layout>
+                    <Layout.Section>
+                        <FullscreenBar onAction={() => navigate('/app')}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <Text variant="headingLg">Email configuration</Text>
+                                </div>
+                            </div>
+                        </FullscreenBar>
+                    </Layout.Section>
                     <Layout.Section oneThird>
                         <Card
                             as="section"
                             paddingInlineStart={{ xs: "400", sm: "0" }}
                             paddingInlineEnd={{ xs: "400", sm: "0" }}
                         >
-                            <Text as="h3" variant="headingMd">
-                                Configurations
-                            </Text>
-                            <Text as="p" variant="bodyMd">
-                                Update App Setting and Preferences
-                            </Text>
+                            <div style={{ display: "flex", flexBasis: "row", justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                    <Text as="h3" variant="headingMd">
+                                        Configurations
+                                    </Text>
+                                    <Text as="p" variant="bodyMd">
+                                        Update App Setting and Preferences
+                                    </Text>
+                                </div>
+                                <div>
+                                    {/* <Button tone="critical" onClick={(e) => activeMails(e, false)} variant="primary">Disable mails</Button> */}
+                                </div>
+                            </div>
                         </Card>
                     </Layout.Section>
                     <Layout.Section twoThirds>

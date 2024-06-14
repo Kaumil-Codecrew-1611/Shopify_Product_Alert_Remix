@@ -1,12 +1,14 @@
 import axios from 'axios';
-import { authenticate } from '../shopify.server';
-console.log(process.env.EMAIL_ADD)
+const baseURL = process.env.BASEURL
+const accessToken = process.env.API_KEY_SECRET
+
 // Create an Axios instance
+console.log(baseURL, "baseURL")
 const axiosInstance = axios.create({
-    baseURL: 'http://192.168.1.6/alert-app-api/public/api/v1',
+    baseURL,
     headers: {
         'Content-Type': 'application/json',
-        'Access-Token': 'Shopify@2024'
+        'Access-Token': accessToken
     },
 });
 
