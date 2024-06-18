@@ -9,17 +9,9 @@ export const loader = async ({ request }) => {
     const { session } = await authenticate.admin(request);
     const { shop, accessToken } = session;
     try {
-        let emailConfig = await prisma.emailConfiguration.findFirst({ where: { shop } });
-        console.log(emailConfig, "emailConfig");
-
-        if (!emailConfig) {
-            emailConfig = {
-                threshold: 10, // Default threshold value
-                // Add other default values as necessary
-            };
-        }
-
-
+        const emailConfig = await prisma.emailConfiguration.findFirst({ where: { shop } });
+        console.log(emailConfig, "emailConfig")
+        // Fetch products from Shopify API with pagination parameters
         const response = await fetch(`https://${shop}/admin/api/${apiVersion}/products.json`, {
             method: 'GET',
             headers: {
@@ -29,10 +21,7 @@ export const loader = async ({ request }) => {
         });
 
         const data = await response.json();
-        if (!data.products) {
-            throw new Error('No products data found');
-        }
-
+        // Process and filter data as needed
         const filteredData = data.products.filter(item => (item.handle !== "gift-card") && item.variants.some(node => node.inventory_quantity < emailConfig.threshold)).map(item => ({ ...item, variants: item.variants.filter(node => node.inventory_quantity < emailConfig.threshold) }));
 
         const groupedVariants = filteredData.reduce((acc, product) => {
@@ -47,41 +36,28 @@ export const loader = async ({ request }) => {
 
         return { products: filteredData, groupedVariants, emailConfig };
     } catch (err) {
-        console.log(err, "error");
-        return { error: err.message };
+        console.log(err, "emailConfig")
+        return err;
     }
 };
 
-
 const Products = () => {
-    const { products, groupedVariants, emailConfig, error } = useLoaderData();
+    const { products, groupedVariants, emailConfig } = useLoaderData();
     const navigate = useNavigate();
 
     const [currentPage, setCurrentPage] = useState(1);
     const perPage = 5;
-    const totalData = groupedVariants ? Object.keys(groupedVariants).length : 0;
+    const totalData = Object.keys(groupedVariants).length
     const totalPages = Math.ceil(totalData / perPage);
-
     const handlePageChange = (page) => {
         setCurrentPage(page);
     };
-
     const startIndex = (currentPage - 1) * perPage;
     const endIndex = startIndex + perPage;
-    const visibleVariants = groupedVariants ? Object.values(groupedVariants).slice(startIndex, endIndex) : [];
-
+    const visibleVariants = Object.values(groupedVariants).slice(startIndex, endIndex);
     const renderIndex = (vIndex) => {
         return startIndex + vIndex + 1;
     };
-
-    if (error) {
-        return <div>Error: {error}</div>;
-    }
-
-    if (!products || !groupedVariants || !emailConfig) {
-        return <div>Loading...</div>;
-    }
-
     return (
         <Page>
             <Layout>
@@ -90,11 +66,9 @@ const Products = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <Text variant="headingLg">Products</Text>
-                                {emailConfig && (
-                                    <Tooltip content={`Products and its variants with quantities below the threshold (${emailConfig.threshold})`}>
-                                        <Icon source={InfoIcon} />
-                                    </Tooltip>
-                                )}
+                                <Tooltip content={`Products and it's variants with quantities below the threshold (${emailConfig.threshold})`}>
+                                    <Icon source={InfoIcon} />
+                                </Tooltip>
                             </div>
                         </div>
                     </FullscreenBar>
@@ -132,7 +106,7 @@ const Products = () => {
                                                 </>
                                             )}
                                             <td style={{ border: '1px solid #ccc', padding: '8px' }}>
-                                                {variant.title === "Default Title" ? "-" : variant.title}
+                                                {variant.title == "Default Title" ? "-" : variant.title}
                                             </td>
                                             <td style={{ border: '1px solid #ccc', padding: '8px', fontWeight: 700, color: variant.inventory_quantity === 0 ? 'red' : 'black', textAlign: "end" }}>{variant.inventory_quantity}</td>
                                             <td style={{ border: '1px solid #ccc', padding: '8px', textAlign: "end" }}>{variant.price}</td>

@@ -221,7 +221,7 @@ export default function Index() {
                                         Configurations
                                     </Text>
                                     <Text as="p" variant="bodyMd">
-                                        Update App Setting and Preferences
+                                        Update app setting and preferences
                                     </Text>
                                 </div>
                                 <div>
