@@ -22,3 +22,33 @@
 .Polaris-ShadowBevel>.Polaris-Box>.Polaris-Box {
     padding-bottom: 20px;
 }
+
+.error-image .Polaris-Thumbnail--sizeLarge {
+    /* min-width: 350px !important; */
+    width: 350px !important;
+}
+
+.error-image {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding-top: 50px;
+    padding-bottom: 50px;
+    gap: 15px;
+}
+
+.loading {
+    display: flex;
+    gap: 3px;
+    justify-content: center;
+    align-items: start;
+}
+
+.loading .Polaris-Spinner.Polaris-Spinner--sizeSmall svg {
+    fill: gray;
+}
+.loading .Polaris-Text--root {
+    padding-top: 1px;
+    color: gray;
+}

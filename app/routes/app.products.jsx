@@ -1,25 +1,22 @@
 import { useLoaderData, useNavigate } from '@remix-run/react';
-import { Card, FullscreenBar, Icon, Layout, Page, Pagination, Tooltip, Text } from '@shopify/polaris';
+import { Card, FullscreenBar, Icon, Layout, Page, Pagination, Tooltip, Text, Thumbnail, Spinner } from '@shopify/polaris';
 import { useState } from 'react';
 import { authenticate, apiVersion } from "../shopify.server";
 import { InfoIcon } from '@shopify/polaris-icons';
 import prisma from '../server/db.server';
+import ProductLayout from '../components/ProductLayout';
+import DataNotFound from '../assets/images/nodatafound.jpg'
 
 export const loader = async ({ request }) => {
     const { session } = await authenticate.admin(request);
     const { shop, accessToken } = session;
+    let emailConfig = await prisma.emailConfiguration.findFirst({ where: { shop } });
+    if (!emailConfig) {
+        emailConfig = {
+            threshold: 10
+        };
+    }
     try {
-        let emailConfig = await prisma.emailConfiguration.findFirst({ where: { shop } });
-        console.log(emailConfig, "emailConfig");
-
-        if (!emailConfig) {
-            emailConfig = {
-                threshold: 10, // Default threshold value
-                // Add other default values as necessary
-            };
-        }
-
-
         const response = await fetch(`https://${shop}/admin/api/${apiVersion}/products.json`, {
             method: 'GET',
             headers: {
@@ -29,12 +26,12 @@ export const loader = async ({ request }) => {
         });
 
         const data = await response.json();
-        if (!data.products) {
-            throw new Error('No products data found');
-        }
+
 
         const filteredData = data.products.filter(item => (item.handle !== "gift-card") && item.variants.some(node => node.inventory_quantity < emailConfig.threshold)).map(item => ({ ...item, variants: item.variants.filter(node => node.inventory_quantity < emailConfig.threshold) }));
-
+        if (!filteredData.length) {
+            throw new Error('No products data found');
+        }
         const groupedVariants = filteredData.reduce((acc, product) => {
             product.variants.forEach((variant) => {
                 if (!acc[variant.product_id]) {
@@ -47,19 +44,19 @@ export const loader = async ({ request }) => {
 
         return { products: filteredData, groupedVariants, emailConfig };
     } catch (err) {
-        console.log(err, "error");
-        return { error: err.message };
+        return { error: err.message, emailConfig };
     }
 };
 
 
 const Products = () => {
-    const { products, groupedVariants, emailConfig, error } = useLoaderData();
+    const data = useLoaderData();
+    // const { products, groupedVariants, emailConfig, error } = useLoaderData();
     const navigate = useNavigate();
 
     const [currentPage, setCurrentPage] = useState(1);
     const perPage = 5;
-    const totalData = groupedVariants ? Object.keys(groupedVariants).length : 0;
+    const totalData = data?.groupedVariants ? Object.keys(data.groupedVariants).length : 0;
     const totalPages = Math.ceil(totalData / perPage);
 
     const handlePageChange = (page) => {
@@ -68,18 +65,32 @@ const Products = () => {
 
     const startIndex = (currentPage - 1) * perPage;
     const endIndex = startIndex + perPage;
-    const visibleVariants = groupedVariants ? Object.values(groupedVariants).slice(startIndex, endIndex) : [];
+    const visibleVariants = data?.groupedVariants ? Object.values(data?.groupedVariants).slice(startIndex, endIndex) : [];
 
     const renderIndex = (vIndex) => {
         return startIndex + vIndex + 1;
     };
 
-    if (error) {
-        return <div>Error: {error}</div>;
+    if (data?.error) {
+        return (
+            <ProductLayout navigateAction={() => navigate('/app')} tooltipContent={`Products and its variants with quantities below the threshold (${data?.emailConfig.threshold})`} title={'Products'}>
+                <div className='error-image'>
+                    <Thumbnail source={DataNotFound} alt='Data not found' size='large' />
+                    <Text variant="bodyLg" fontWeight='bold'>{data?.error}</Text>
+                </div>
+            </ProductLayout>
+        );
     }
 
-    if (!products || !groupedVariants || !emailConfig) {
-        return <div>Loading...</div>;
+    if (!data?.products || !data?.groupedVariants || !data?.emailConfig) {
+        return (
+            <ProductLayout navigateAction={() => navigate('/app')} tooltipContent={`Products and its variants with quantities below the threshold (${data?.emailConfig.threshold})`} title={'Products'}>
+                <div className='loading'>
+                    <Spinner size="small"  />
+                    <Text fontWeight='bold' alignment='center' variant='headingMd'>Loading product data...</Text>
+                </div>
+            </ProductLayout>
+        )
     }
 
     return (
@@ -90,8 +101,8 @@ const Products = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <Text variant="headingLg">Products</Text>
-                                {emailConfig && (
-                                    <Tooltip content={`Products and its variants with quantities below the threshold (${emailConfig.threshold})`}>
+                                {data?.emailConfig && (
+                                    <Tooltip content={`Products and its variants with quantities below the threshold (${data?.emailConfig.threshold})`}>
                                         <Icon source={InfoIcon} />
                                     </Tooltip>
                                 )}
@@ -115,7 +126,7 @@ const Products = () => {
                             </thead>
                             <tbody>
                                 {visibleVariants.map((variants, index) => {
-                                    const product = products.find((product) => product.variants[0].product_id === variants[0].product_id);
+                                    const product = data?.products.find((product) => product.variants[0].product_id === variants[0].product_id);
                                     const { id, title, images } = product;
                                     const productImage = images[0]?.src;
 
