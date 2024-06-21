@@ -7,6 +7,7 @@ export const loader = async ({ request }) => {
     try {
         const { session } = await authenticate.admin(request);
         const { shop, accessToken } = session;
+        console.log(accessToken,"::::accessToken")
         const responseOfShop = await fetch(`https://${shop}/admin/api/${apiVersion}/shop.json`, {
             method: 'GET',
             headers: {

@@ -3,7 +3,7 @@
 client_id = "defe5dd0f037b49d15c2cb306f8e1666"
 name = "alert-app-v0"
 handle = "alert-app-v0"
-application_url = "https://ought-hr-charlotte-investigator.trycloudflare.com"
+application_url = "https://implies-september-mounting-download.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_products,write_products"
 
 [auth]
 redirect_urls = [
-  "https://ought-hr-charlotte-investigator.trycloudflare.com/auth/callback",
-  "https://ought-hr-charlotte-investigator.trycloudflare.com/auth/shopify/callback",
-  "https://ought-hr-charlotte-investigator.trycloudflare.com/api/auth/callback"
+  "https://implies-september-mounting-download.trycloudflare.com/auth/callback",
+  "https://implies-september-mounting-download.trycloudflare.com/auth/shopify/callback",
+  "https://implies-september-mounting-download.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

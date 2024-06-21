@@ -43,6 +43,9 @@ export default defineConfig({
       allow: ["app", "node_modules"],
     },
   },
+  optimizeDeps: {
+    exclude: ['/app/server/db.server.js'] // Exclude server-side module from client-side bundle
+  },
   plugins: [
     remix({
       ignoredRouteFiles: ["**/.*"],

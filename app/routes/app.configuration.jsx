@@ -1,5 +1,5 @@
 import { json } from "@remix-run/node";
-import { Form, useLoaderData, useNavigate } from "@remix-run/react";
+import { Form, useActionData, useLoaderData, useNavigate } from "@remix-run/react";
 import {
     Button,
     Card,
@@ -78,36 +78,118 @@ export const loader = async ({ request }) => {
         return null;
     }
 };
-
-
 export const action = async ({ request }) => {
+    let settings = await request.formData();
+
+    settings = Object.fromEntries(settings);
+    console.log(settings, ":::::settings");
+
+    const maxFrequency = getMaxFrequency();
+
+    // Validate settings
+    let newErrors = {};
+
+    if (!settings.email) {
+        newErrors.email = "Email is required.";
+    }
+
+    if (!settings.threshold) {
+        newErrors.threshold = "Threshold is required.";
+    } else if (isNaN(settings.threshold)) {
+        newErrors.threshold = "Threshold must be a number.";
+    }
+
+    if (!settings.frequency) {
+        newErrors.frequency = "Frequency is required.";
+    } else if (isNaN(settings.frequency)) {
+        newErrors.frequency = "Frequency must be a number.";
+    } else if (settings.frequencyUnit && settings.frequency > maxFrequency[settings.frequencyUnit]) {
+        newErrors.frequency = `Maximum allowable value for ${settings.frequencyUnit} is ${maxFrequency[settings.frequencyUnit]}.`;
+    }
+
+    if (!settings.frequencyUnit) {
+        newErrors.frequencyUnit = "Frequency unit is required.";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+        const errorMessage = Object.values(newErrors).join(' ');
+       
+        return json({ message: errorMessage, errors: newErrors }, { status: 400 });
+    }
+
+    const { session } = await authenticate.admin(request);
+    console.log(session, "::::::session");
+
     try {
-        const { session } = await authenticate.admin(request);
-        const { shop } = session;
-        const formData = await request.formData();
-        const email = formData.get("email");
-        const threshold = parseInt(formData.get("threshold"));
-        const frequency = parseInt(formData.get("frequency"));
-        const frequencyUnit = formData.get("frequencyUnit");
-
-        console.log({ email, threshold, frequency, frequencyUnit }, "Received form data");
-
         await prisma.emailConfiguration.upsert({
-            where: { shop },
+            where: { shop: session.shop },
             create: {
-                email, threshold, frequency, frequencyUnit, shop
+                email: settings.email,
+                threshold: +settings.threshold,
+                frequency: +settings.frequency,
+                frequencyUnit: settings.frequencyUnit,
+                shop: session.shop,
             },
             update: {
-                email, threshold, frequency, frequencyUnit, shop
+                email: settings.email,
+                threshold: +settings.threshold,
+                frequency: +settings.frequency,
+                frequencyUnit: settings.frequencyUnit,
+                shop: session.shop,
             },
         });
 
-        return json({ message: "Form submitted successfully!", email, threshold, frequency, frequencyUnit });
+        return json({ message: "Form submitted successfully!" });
     } catch (error) {
-        console.error("Error storing form data in Prisma:", error.message);
-        return json({ error: "An error occurred while processing the form." }, 500);
+        console.error("Error saving email configuration:", error);
+       
+        return json({ message: "An error occurred while saving the configuration." }, { status: 500 });
     }
 };
+
+/* export const action = async ({ request }) => {
+    let settings = await request.formData();
+
+  settings = Object.fromEntries(settings);
+  console.log(settings,":::::settings")
+      // Validate settings
+      const requiredFields = ['email', 'threshold', 'frequency', 'frequencyUnit'];
+      const missingFields = requiredFields.filter(field => !settings[field] || settings[field].trim() === "");
+  
+      // Check if integer fields are valid numbers
+      const intFields = ['threshold', 'frequency'];
+      const invalidIntFields = intFields.filter(field => isNaN(settings[field]));
+  
+      if (missingFields.length > 0) {
+          const errorMessage = `Missing or empty fields: ${missingFields.join(', ')}`;
+          
+          return json({ message: errorMessage }, { status: 400 });
+      }
+  
+      if (invalidIntFields.length > 0) {
+          const errorMessage = `Invalid number fields: ${invalidIntFields.join(', ')}`;
+         
+          return json({ message: errorMessage }, { status: 400 });
+      }
+
+      
+  const { session } = await authenticate.admin(request);
+  console.log(session, "::::::session")
+  
+  await prisma.emailConfiguration.upsert({
+    where: { shop: session.shop },
+    create: {
+        email:settings?.email, threshold:+settings?.threshold, frequency:+settings?.frequency, frequencyUnit:settings?.frequencyUnit, shop: session.shop,
+    },
+    update: {
+        email:settings?.email, threshold:+settings?.threshold, frequency:+settings?.frequency, frequencyUnit:settings?.frequencyUnit, shop: session.shop,
+    },
+});
+
+return json({ message: "Form submitted successfully!"});
+
+
+}; */
 
 
 const getMaxFrequency = () => {
@@ -127,9 +209,12 @@ const getMaxFrequency = () => {
 };
 export default function Index() {
     const data = useLoaderData();
+    const actionsResult =   useActionData();
+
     const [formDataSaved, setFormDataSaved] = useState({});
     const [toastActive, setToastActive] = useState(false);
     const [toastContent, setToastContent] = useState("");
+    const [toastError, setToastError] = useState(false);
     const [errors, setErrors] = useState({});
     const maxFrequency = getMaxFrequency();
     const navigate = useNavigate()
@@ -138,6 +223,21 @@ export default function Index() {
             setFormDataSaved(data.emailConfig);
         }
     }, [data]);
+
+    useEffect(() => {
+        if (actionsResult) {
+            if (actionsResult.message) {
+                setToastContent(actionsResult.message);
+                setToastActive(true);
+                setToastError(false);
+            } else if (actionsResult.errors) {
+                setToastContent(actionsResult.message);
+                setToastActive(true);
+                setToastError(true);
+                setErrors(actionsResult.errors);
+            }
+        }
+    }, [actionsResult]);
 
 
     const toggleToastActive = useCallback(() => setToastActive((active) => !active), []);
@@ -190,14 +290,22 @@ export default function Index() {
             document.getElementById("configForm").submit();
         }
     };
-
+    const toastMarkup = toastActive ? (
+        <Toast content={toastContent} onDismiss={toggleToastActive} error={toastError} />
+    ) : null;
+/* 
     const toastMarkup = toastActive ? (
         <Toast content={toastContent} error onDismiss={toggleToastActive} />
     ) : null;
+    const toastErrorMarkup = actionsResult?.error?.message ? (
+        <Toast content={actionsResult?.error?.message} onDismiss={toggleToastActive} error />
+    ) : actionsResult?.message ? <Toast content={actionsResult.message}  onDismiss={toggleToastActive} />:""
+ */
 
     return (
         <Frame>
             {toastMarkup}
+            {/* {toastErrorMarkup} */}
             <Page>
                 <Layout>
                     <Layout.Section>
@@ -232,7 +340,8 @@ export default function Index() {
                     </Layout.Section>
                     <Layout.Section twoThirds>
                         <Card roundedAbove="sm">
-                            <Form method="post" id="configForm" onSubmit={validateForm}>
+                            {/* <Form method="post" id="configForm" onSubmit={validateForm}> */}
+                            <Form method="POST">
                                 <Grid >
                                     <Grid.Cell columnSpan={{ xs: 12, sm: 6, md: 6, lg: 6, xl: 6 }}>
                                         <Tooltip content="Enter the email address where you want to receive product details notifications.">
