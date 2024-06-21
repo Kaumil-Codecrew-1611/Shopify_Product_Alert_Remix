@@ -14,12 +14,14 @@ import {
     Toast,
     Tooltip
 } from "@shopify/polaris";
-import { useCallback, useEffect, useState } from "react";
-import prisma from "../server/db.server.js";
 import cron from "node-cron";
+import { useCallback, useEffect, useState } from "react";
+import axiosInstance from "../server/axios.js";
+import prisma from "../server/db.server.js";
+
 
 import { apiVersion, authenticate } from "../shopify.server";
-import axiosInstance from "../server/axios.js";
+
 const sendProducts = async (shop, accessToken, emailConfig) => {
     try {
         const responseOfShop = await fetch(`https://${shop}/admin/api/${apiVersion}/shop.json`, {
@@ -30,94 +32,8 @@ const sendProducts = async (shop, accessToken, emailConfig) => {
             }
         });
         const shopDetails = await responseOfShop.json();
-        console.log(shopDetails, "::::shopDetails");
-        console.log(" 111111111 ");
-
-        const responseOfProduct = await fetch(`https://${shop}/admin/api/${apiVersion}/products.json`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Shopify-Access-Token': accessToken,
-            }
-        });
-
-        const data = await responseOfProduct.json();
-        const filteredData = data.products.filter(item => (item.handle !== "gift-card") && item.variants.some(node => node.inventory_quantity < emailConfig.threshold)).map(item => ({ ...item, variants: item.variants.filter(node => node.inventory_quantity < emailConfig.threshold) }));
-
-       
-            let shop_information = {
-                shop_id: shopDetails.shop.id,
-                shop_name: shopDetails.shop.name,
-                shop_url: shopDetails.shop.domain,
-                email: emailConfig.email,
-                shop_owner: shopDetails?.shop_owner,
-                frequency: emailConfig.frequency,
-                unit: emailConfig.frequencyUnit
-            };
-            console.log(" 2222222 ");
-            await axiosInstance.post("/store-product", { shop_information, productData: filteredData });
-
-            console.log(" 33333331 ");
-            return true;    
-    } catch (error) {
-        console.log(error, "::error");
-    }
-};
-const sendProductsInEachMinute = async (shop, accessToken, emailConfig) => {
-    try {
-        const responseOfShop = await fetch(`https://${shop}/admin/api/${apiVersion}/shop.json`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Shopify-Access-Token': accessToken,
-            }
-        });
-        const shopDetails = await responseOfShop.json();
-        console.log(shopDetails, "::::shopDetails");
-        console.log(" sendProductsInEachMinute 111111111 ");
-
-        const responseOfProduct = await fetch(`https://${shop}/admin/api/${apiVersion}/products.json`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Shopify-Access-Token': accessToken,
-            }
-        });
-
-        const data = await responseOfProduct.json();
-        const filteredData = data.products.filter(item => (item.handle !== "gift-card") && item.variants.some(node => node.inventory_quantity < emailConfig.threshold)).map(item => ({ ...item, variants: item.variants.filter(node => node.inventory_quantity < emailConfig.threshold) }));
-
-        
-        console.log(" sendProductsInEachMinute hereeeeeeeeee")
-        
-            let shop_information1 = {
-                shop_id: shopDetails.shop.id,
-            };
-            console.log(" sendProductsInEachMinute 4444444 ");
-            await axiosInstance.post("/store-product", { shop_information:shop_information1, productData: filteredData });
-           
-            console.log(" sendProductsInEachMinute 55555555 ");
-            return true;
-     
-       
-      
-    } catch (error) {
-        console.log(error, "::error");
-    }
-};
-
-/* const sendProducts = async (shop, accessToken, emailConfig,onsubmitcalled) => {
-    try {
-        const responseOfShop = await fetch(`https://${shop}/admin/api/${apiVersion}/shop.json`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Shopify-Access-Token': accessToken,
-            }
-        });
-        const shopDetails = await responseOfShop.json();
         console.log(shopDetails, "::::shopDetails")
-        console.log(" 111111111 ")
+
         const responseOfProduct = await fetch(`https://${shop}/admin/api/${apiVersion}/products.json`, {
             method: 'GET',
             headers: {
@@ -128,7 +44,6 @@ const sendProductsInEachMinute = async (shop, accessToken, emailConfig) => {
 
         const data = await responseOfProduct.json();
         const filteredData = await data.products.filter(item => (item.handle !== "gift-card") && item.variants.some(node => node.inventory_quantity < emailConfig.threshold)).map(item => ({ ...item, variants: item.variants.filter(node => node.inventory_quantity < emailConfig.threshold) }));
-        if(onsubmitcalled){
         const shop_information = {
             shop_id: shopDetails.shop.id,
             shop_name: shopDetails.shop.name,
@@ -138,37 +53,23 @@ const sendProductsInEachMinute = async (shop, accessToken, emailConfig) => {
             frequency: emailConfig.frequency,
             unit: emailConfig.frequencyUnit
         };
-        console.log(" 2222222 ")
         const response = await axiosInstance.post("/store-product", { shop_information, productData: filteredData });
-        console.log(response, " api response ")
-        console.log(" 33333331 ")
         return response;
-    }
-    else{
-        const shop_information = {
-            shop_id: shopDetails.shop.id,
-        };
-        console.log(" 2222222 ")
-        const response = await axiosInstance.post("/store-product", { shop_information, productData: filteredData });
-        console.log(response, " api response ")
-        console.log(" 33333331 ")
-        return response;
-    }
     } catch (error) {
-        console.log(error,"::error")
+        console.log({ error: error.response.data }, "Error sending details");
     }
-}; */
+};
 
 export const loader = async ({ request }) => {
     try {
         const { session } = await authenticate.admin(request);
-        const { shop,accessToken } = session;
+        const { shop, accessToken } = session;
         const emailConfig = await prisma.emailConfiguration.findFirst({ where: { shop } });
         if (emailConfig) {
             cron.schedule('* * * * *', async () => {
                 setTimeout(async () => {
-                    await sendProductsInEachMinute(shop, accessToken, emailConfig);
-                }, 4000)
+                    await sendProducts(shop, accessToken, emailConfig);
+                }, 5000)
             });
         }
         return ({ shop, emailConfig });
@@ -218,13 +119,7 @@ export const action = async ({ request }) => {
 
     const { session } = await authenticate.admin(request);
     console.log(session, "::::::session");
-    let emailConfig={
-        threshold: +settings.threshold,
-        email:settings.email,
-        frequency: +settings.frequency,
-        frequencyUnit: settings.frequencyUnit
-    }
-   
+
     try {
         await prisma.emailConfiguration.upsert({
             where: { shop: session.shop },
@@ -243,7 +138,7 @@ export const action = async ({ request }) => {
                 shop: session.shop,
             },
         });
-        sendProducts(session.shop,session.accessToken,emailConfig,true)
+
         return json({ message: "Form submitted successfully!" });
     } catch (error) {
         console.error("Error saving email configuration:", error);

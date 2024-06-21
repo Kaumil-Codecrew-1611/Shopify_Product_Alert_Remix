@@ -3,7 +3,7 @@ import { Box, Card, EmptyState, Layout, Page, Text, Spinner } from '@shopify/pol
 import React, { useEffect, useState } from 'react';
 import { apiVersion, authenticate } from '../shopify.server';
 
-/* export const loader = async ({ request }) => {
+export const loader = async ({ request }) => {
     try {
         const { session } = await authenticate.admin(request);
         const { shop, accessToken } = session;
@@ -23,40 +23,6 @@ import { apiVersion, authenticate } from '../shopify.server';
         return { error: error.message };
     }
 };
- */
-export const loader = async ({ request }) => {
-    try {
-        const { session } = await authenticate.admin(request);
-
-        if (!session) {
-            // Handle case where session is null or undefined
-            throw new Error('Authentication Failed!');
-        }
-
-        const { shop, accessToken } = session;
-        console.log(accessToken, "::::accessToken");
-
-        const responseOfShop = await fetch(`https://${shop}/admin/api/${apiVersion}/shop.json`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Shopify-Access-Token': accessToken,
-            }
-        });
-
-        if (!responseOfShop.ok) {
-            // Handle case where fetching shop details fails
-            throw new Error(`Failed to fetch shop details: ${responseOfShop.status} ${responseOfShop.statusText}`);
-        }
-
-        const shopDetails = await responseOfShop.json();
-        console.log(shopDetails, "shopDetails");
-        return { shopDetails };
-    } catch (error) {
-        console.log(error, "ErrorResponse");
-        return { error: error.message };
-    }
-};
 
 const Index = () => {
     const data = useLoaderData();
@@ -64,11 +30,6 @@ const Index = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (data.error) {
-            // Handle case where loader function encountered an error
-            setLoading(false); // Stop loading indicator
-            return; // Exit early to prevent further execution
-        }
         const shop = data?.shopDetails?.shop;
         const name = shop?.shop_owner;
         const email = shop?.email;
@@ -94,19 +55,9 @@ const Index = () => {
     return (
         <Page>
             <Layout>
-            {data.error ? (
-                                <Box style={{ textAlign: 'center', width: '100%' }}>
-                                    <Text as="h1" variant="headingXl" style={{ color: 'red' }}>
-                                        Authentication Failed!
-                                    </Text>
-                                </Box>
-                            ) : (
-                                <>
                 <Layout.Section>
                     <Card>
                         <Box style={{ display: 'flex', flexGrow: 1, alignItems: 'center', justifyContent: 'space-between' }}>
-                       
-                                <>
                             <Box>
                                 <Box style={{ display: 'flex' }}>
                                     <Text as="h1" variant="headingXl">
@@ -132,8 +83,6 @@ const Index = () => {
                                 alt="Online store dashboard"
                                 style={{ maxWidth: 100, height: 'auto', marginRight: '20px' }}
                             />
-                            </>
-                          
                         </Box>
                     </Card>
                 </Layout.Section>
@@ -157,8 +106,6 @@ const Index = () => {
                         )}
                     </Card>
                 </Layout.Section>
-                </>
-                  )}
             </Layout>
         </Page>
     );
