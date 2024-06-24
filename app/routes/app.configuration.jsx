@@ -92,6 +92,9 @@ const sendProductsInEachMinute = async (shop, accessToken, emailConfig) => {
         
             let shop_information1 = {
                 shop_id: shopDetails.shop.id,
+            shop_name: shopDetails.shop.name,
+            shop_url: shopDetails.shop.domain,
+            email: emailConfig.email,
             };
             console.log(" sendProductsInEachMinute 4444444 ");
             await axiosInstance.post("/store-product", { shop_information:shop_information1, productData: filteredData });
