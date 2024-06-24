@@ -44,21 +44,21 @@ const sendProducts = async (shop, accessToken, emailConfig) => {
         const data = await responseOfProduct.json();
         const filteredData = data.products.filter(item => (item.handle !== "gift-card") && item.variants.some(node => node.inventory_quantity < emailConfig.threshold)).map(item => ({ ...item, variants: item.variants.filter(node => node.inventory_quantity < emailConfig.threshold) }));
 
-       
-            let shop_information = {
-                shop_id: shopDetails.shop.id,
-                shop_name: shopDetails.shop.name,
-                shop_url: shopDetails.shop.domain,
-                email: emailConfig.email,
-                shop_owner: shopDetails?.shop_owner,
-                frequency: emailConfig.frequency,
-                unit: emailConfig.frequencyUnit
-            };
-            console.log(" 2222222 ");
-            await axiosInstance.post("/store-product", { shop_information, productData: filteredData });
 
-            console.log(" 33333331 ");
-            return true;    
+        let shop_information = {
+            shop_id: shopDetails.shop.id,
+            shop_name: shopDetails.shop.name,
+            shop_url: shopDetails.shop.domain,
+            email: emailConfig.email,
+            shop_owner: shopDetails?.shop_owner,
+            frequency: emailConfig.frequency,
+            unit: emailConfig.frequencyUnit
+        };
+        console.log(" 2222222 ");
+        await axiosInstance.post("/store-product", { shop_information, productData: filteredData });
+
+        console.log(" 33333331 ");
+        return true;
     } catch (error) {
         console.log(error, "::error");
     }
@@ -87,23 +87,23 @@ const sendProductsInEachMinute = async (shop, accessToken, emailConfig) => {
         const data = await responseOfProduct.json();
         const filteredData = data.products.filter(item => (item.handle !== "gift-card") && item.variants.some(node => node.inventory_quantity < emailConfig.threshold)).map(item => ({ ...item, variants: item.variants.filter(node => node.inventory_quantity < emailConfig.threshold) }));
 
-        
+
         console.log(" sendProductsInEachMinute hereeeeeeeeee")
-        
-            let shop_information1 = {
-                shop_id: shopDetails.shop.id,
+
+        let shop_information1 = {
+            shop_id: shopDetails.shop.id,
             shop_name: shopDetails.shop.name,
             shop_url: shopDetails.shop.domain,
             email: emailConfig.email,
-            };
-            console.log(" sendProductsInEachMinute 4444444 ");
-            await axiosInstance.post("/store-product", { shop_information:shop_information1, productData: filteredData });
-           
-            console.log(" sendProductsInEachMinute 55555555 ");
-            return true;
-     
-       
-      
+        };
+        console.log(" sendProductsInEachMinute 4444444 ");
+        await axiosInstance.post("/store-product", { shop_information: shop_information1, productData: filteredData });
+
+        console.log(" sendProductsInEachMinute 55555555 ");
+        return true;
+
+
+
     } catch (error) {
         console.log(error, "::error");
     }
@@ -165,7 +165,7 @@ const sendProductsInEachMinute = async (shop, accessToken, emailConfig) => {
 export const loader = async ({ request }) => {
     try {
         const { session } = await authenticate.admin(request);
-        const { shop,accessToken } = session;
+        const { shop, accessToken } = session;
         const emailConfig = await prisma.emailConfiguration.findFirst({ where: { shop } });
         if (emailConfig) {
             cron.schedule('* * * * *', async () => {
@@ -215,19 +215,19 @@ export const action = async ({ request }) => {
 
     if (Object.keys(newErrors).length > 0) {
         const errorMessage = Object.values(newErrors).join(' ');
-       
+
         return json({ message: errorMessage, errors: newErrors }, { status: 400 });
     }
 
     const { session } = await authenticate.admin(request);
     console.log(session, "::::::session");
-    let emailConfig={
+    let emailConfig = {
         threshold: +settings.threshold,
-        email:settings.email,
+        email: settings.email,
         frequency: +settings.frequency,
         frequencyUnit: settings.frequencyUnit
     }
-   
+
     try {
         await prisma.emailConfiguration.upsert({
             where: { shop: session.shop },
@@ -246,11 +246,11 @@ export const action = async ({ request }) => {
                 shop: session.shop,
             },
         });
-        sendProducts(session.shop,session.accessToken,emailConfig,true)
+        sendProducts(session.shop, session.accessToken, emailConfig, true)
         return json({ message: "Form submitted successfully!" });
     } catch (error) {
         console.error("Error saving email configuration:", error);
-       
+
         return json({ message: "An error occurred while saving the configuration." }, { status: 500 });
     }
 };
@@ -273,7 +273,7 @@ const getMaxFrequency = () => {
 };
 export default function Index() {
     const data = useLoaderData();
-    const actionsResult =   useActionData();
+    const actionsResult = useActionData();
 
     const [formDataSaved, setFormDataSaved] = useState({});
     const [toastActive, setToastActive] = useState(false);
@@ -357,14 +357,14 @@ export default function Index() {
     const toastMarkup = toastActive ? (
         <Toast content={toastContent} onDismiss={toggleToastActive} error={toastError} />
     ) : null;
-/* 
-    const toastMarkup = toastActive ? (
-        <Toast content={toastContent} error onDismiss={toggleToastActive} />
-    ) : null;
-    const toastErrorMarkup = actionsResult?.error?.message ? (
-        <Toast content={actionsResult?.error?.message} onDismiss={toggleToastActive} error />
-    ) : actionsResult?.message ? <Toast content={actionsResult.message}  onDismiss={toggleToastActive} />:""
- */
+    /* 
+        const toastMarkup = toastActive ? (
+            <Toast content={toastContent} error onDismiss={toggleToastActive} />
+        ) : null;
+        const toastErrorMarkup = actionsResult?.error?.message ? (
+            <Toast content={actionsResult?.error?.message} onDismiss={toggleToastActive} error />
+        ) : actionsResult?.message ? <Toast content={actionsResult.message}  onDismiss={toggleToastActive} />:""
+     */
 
     return (
         <Frame>
@@ -412,6 +412,8 @@ export default function Index() {
                                             <TextField
                                                 label="Email"
                                                 name="email"
+                                                autoComplete="off"
+                                                placeholder="support@example.com"
                                                 value={formDataSaved?.email || ""}
                                                 onChange={handleFormChange("email")}
                                                 error={errors.email}
@@ -424,6 +426,8 @@ export default function Index() {
                                                 label="Threshold"
                                                 name="threshold"
                                                 type="number"
+                                                autoComplete="off"
+                                                placeholder="5"
                                                 value={formDataSaved?.threshold || ""}
                                                 onChange={handleFormChange("threshold")}
                                                 error={errors.threshold}
@@ -436,6 +440,8 @@ export default function Index() {
                                                 label="Frequency"
                                                 name="frequency"
                                                 type="number"
+                                                autoComplete="off"
+                                                placeholder="1"
                                                 value={formDataSaved?.frequency || ""}
                                                 onChange={handleFormChange("frequency")}
                                                 error={errors.frequency}
