@@ -1,5 +1,5 @@
 import { useNavigate } from '@remix-run/react'
-import { Layout, Page, Card, BlockStack, Text, List, Icon, FullscreenBar } from '@shopify/polaris'
+import { Layout, Page, Card, BlockStack, Text, List, FullscreenBar } from '@shopify/polaris'
 import React from 'react'
 
 const Guide = () => {

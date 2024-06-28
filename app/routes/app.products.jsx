@@ -65,7 +65,8 @@ const Products = () => {
 
     const startIndex = (currentPage - 1) * perPage;
     const endIndex = startIndex + perPage;
-    const visibleVariants = data?.groupedVariants ? Object.values(data?.groupedVariants).slice(startIndex, endIndex) : [];
+    const visibleVariants = data?.groupedVariants ?
+        Object.values(data?.groupedVariants).slice(startIndex, endIndex) : [];
 
     const renderIndex = (vIndex) => {
         return startIndex + vIndex + 1;
@@ -86,7 +87,7 @@ const Products = () => {
         return (
             <ProductLayout navigateAction={() => navigate('/app')} tooltipContent={`Products and its variants with quantities below the threshold (${data?.emailConfig.threshold})`} title={'Products'}>
                 <div className='loading'>
-                    <Spinner size="small"  />
+                    <Spinner size="small" />
                     <Text fontWeight='bold' alignment='center' variant='headingMd'>Loading product data...</Text>
                 </div>
             </ProductLayout>
@@ -137,8 +138,8 @@ const Products = () => {
                                                     <td rowSpan={variants.length} style={{ border: '1px solid #ccc', padding: '8px', textAlign: "end" }}>{renderIndex(index)}</td>
                                                     <td rowSpan={variants.length} style={{ border: '1px solid #ccc', padding: '8px', textAlign: "end" }}>{id}</td>
                                                     <td rowSpan={variants.length} style={{ border: '1px solid #ccc', padding: '8px' }}>{title}</td>
-                                                    <td rowSpan={variants.length} style={{ border: '1px solid #ccc', padding: '8px' }}>
-                                                        {productImage && <img src={productImage} alt={title} style={{ borderRadius: '50%', width: '60px', height: '60px' }} />}
+                                                    <td rowSpan={variants.length} style={{ border: '1px solid #ccc', padding: '8px', textAlign: "center" }}>
+                                                        {productImage ? <img src={productImage} alt={title} style={{ borderRadius: '50%', width: '70px', height: '70px' }} /> : <></>}
                                                     </td>
                                                 </>
                                             )}

@@ -1,72 +1,21 @@
 import { useLoaderData } from '@remix-run/react';
-import { Box, Card, EmptyState, Layout, Page, Text, Spinner } from '@shopify/polaris';
+import { Box, Card, EmptyState, Layout, Page, Text, Spinner, Button } from '@shopify/polaris';
 import React, { useEffect, useState } from 'react';
 import { apiVersion, authenticate } from '../shopify.server';
 import prisma from '../server/db.server';
-import axios from 'axios';
-
-/* export const loader = async ({ request }) => {
-    try {
-        const { session } = await authenticate.admin(request);
-        const { shop, accessToken } = session;
-        console.log(accessToken,"::::accessToken")
-        const responseOfShop = await fetch(`https://${shop}/admin/api/${apiVersion}/shop.json`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Shopify-Access-Token': accessToken,
-            }
-        });
-        const shopDetails = await responseOfShop.json();
-        console.log(shopDetails, "shopDetails");
-        return { shopDetails };
-    } catch (error) {
-        console.log(error, "ErrorResponse");
-        return { error: error.message };
-    }
-};
- */
-const clientId = process.env.SHOPIFY_API_KEY;
-const clientSecret = process.env.SHOPIFY_API_SECRET;
-
-async function exchangeToken(shop, subjectToken) {
-    const url = `https://${shop}.myshopify.com/admin/oauth/access_token`;
-
-    const params = {
-        client_id: clientId,
-        client_secret: clientSecret,
-        grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-        subject_token: subjectToken,
-        subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
-        requested_token_type: 'urn:shopify:params:oauth:token-type:offline-access-token',
-    };
-
-    try {
-        const response = await axios.post(url, params);
-        return response.data;
-    } catch (error) {
-        console.error('Error exchanging token:', error);
-        throw new Error('Token exchange failed');
-    }
-}
+import Logo from '../assets/images/11.png'
+import Banner from '../assets/images/7.png'
 export const loader = async ({ request }) => {
     try {
-
         const { session } = await authenticate.admin(request);
-        console.log(session, "----session----")
-        exchangeToken(session.shop, session.accessToken)
-            .then(data => console.log('Token Exchange Successful:', data))
-            .catch(error => console.error('Token Exchange Failed:', error));
-
+        let shop, accessToken;
         if (!session) {
-            // Handle case where session is null or undefined
             await prisma.session.deleteMany()
             throw new Error('Authentication Failed!');
+        } else {
+            shop = session.shop
+            accessToken = session.accessToken
         }
-
-        const { shop, accessToken } = session;
-        console.log(accessToken, "::::accessToken");
-
         const responseOfShop = await fetch(`https://${shop}/admin/api/${apiVersion}/shop.json`, {
             method: 'GET',
             headers: {
@@ -76,7 +25,6 @@ export const loader = async ({ request }) => {
         });
 
         if (!responseOfShop.ok) {
-            // Handle case where fetching shop details fails
             throw new Error(`Failed to fetch shop details: ${responseOfShop.status} ${responseOfShop.statusText}`);
         }
 
@@ -93,7 +41,7 @@ const Index = () => {
     const data = useLoaderData();
     const [shopDetails, setShopDetails] = useState({});
     const [loading, setLoading] = useState(true);
-
+    // const navigate = useNavigate()
     useEffect(() => {
         if (data.error) {
             // Handle case where loader function encountered an error
@@ -136,7 +84,6 @@ const Index = () => {
                         <Layout.Section>
                             <Card>
                                 <Box style={{ display: 'flex', flexGrow: 1, alignItems: 'center', justifyContent: 'space-between' }}>
-
                                     <>
                                         <Box>
                                             <Box style={{ display: 'flex' }}>
@@ -149,7 +96,7 @@ const Index = () => {
                                             </Box>
                                             <Box paddingBlockStart="100">
                                                 <Text as="p" variant="bodyLg">
-                                                    Welcome to the alert application
+                                                    Welcome to the dropstock alert
                                                 </Text>
                                             </Box>
                                             {shopDetails?.email && <Box paddingBlockStart="100">
@@ -159,12 +106,11 @@ const Index = () => {
                                             </Box>}
                                         </Box>
                                         <img
-                                            src="https://cdn.shopify.com/s/assets/admin/checkout/settings-customizecart-705f57c725ac05be5a34ec20c05b94298cb8afd10aac7bd9c7ad02030f48cfa0.svg"
-                                            alt="Online store dashboard"
-                                            style={{ maxWidth: 100, height: 'auto', marginRight: '20px' }}
+                                            src={Logo}
+                                            alt="DropStock Alert"
+                                            style={{ maxWidth: 120, height: 'auto', marginRight: '20px' }}
                                         />
                                     </>
-
                                 </Box>
                             </Card>
                         </Layout.Section>
@@ -181,9 +127,12 @@ const Index = () => {
                                             url: '/app/products',
                                         }}
                                         imageContained={true}
-                                        image="https://codecrewinfotech.com/images/logos/logo-cc.png"
+                                        image={Banner}
                                     >
-                                        <p>Keep track of your inventory and get notified via email when product quantities fall below your set threshold.</p>
+                                        <>
+                                            <p>Keep track of your inventory and receive email notifications when product quantities fall below your set threshold. Start with the <Button accessibilityLabel="Setup guide" url='/app/setupGuide' variant='plain'>Setup Guide</Button>
+                                            </p>
+                                        </>
                                     </EmptyState>
                                 )}
                             </Card>
