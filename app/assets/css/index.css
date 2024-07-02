@@ -68,3 +68,7 @@
 .Polaris-Layout__Section >*{
     font-size: 16px !important;
 }
+
+.Polaris-Frame__Scrollable{
+    width: unset !important;
+}

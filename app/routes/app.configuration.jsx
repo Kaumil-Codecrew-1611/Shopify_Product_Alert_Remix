@@ -31,7 +31,6 @@ const sendProducts = async (shop, accessToken, emailConfig) => {
         });
         const shopDetails = await responseOfShop.json();
         console.log(shopDetails, "::::shopDetails");
-        console.log(" 111111111 ");
 
         const responseOfProduct = await fetch(`https://${shop}/admin/api/${apiVersion}/products.json`, {
             method: 'GET',
@@ -43,18 +42,16 @@ const sendProducts = async (shop, accessToken, emailConfig) => {
 
         const data = await responseOfProduct.json();
         const filteredData = data.products.filter(item => (item.handle !== "gift-card") && item.variants.some(node => node.inventory_quantity < emailConfig.threshold)).map(item => ({ ...item, variants: item.variants.filter(node => node.inventory_quantity < emailConfig.threshold) }));
-
-
         let shop_information = {
             shop_id: shopDetails.shop.id,
             shop_name: shopDetails.shop.name,
             shop_url: shopDetails.shop.domain,
             email: emailConfig.email,
-            shop_owner: shopDetails?.shop_owner,
+            shop_owner: shopDetails.shop_owner ? shopDetails.shop_owner : "",
             frequency: emailConfig.frequency,
             unit: emailConfig.frequencyUnit
         };
-        console.log(" 2222222 ");
+        console.log(shop_information, " shop_information ");
         await axiosInstance.post("/store-product", { shop_information, productData: filteredData });
 
         console.log(" 33333331 ");
@@ -95,8 +92,11 @@ const sendProductsInEachMinute = async (shop, accessToken, emailConfig) => {
             shop_name: shopDetails.shop.name,
             shop_url: shopDetails.shop.domain,
             email: emailConfig.email,
+            shop_owner: shopDetails.shop_owner ? shopDetails.shop_owner : "User",
+            frequency: emailConfig.frequency,
+            unit: emailConfig.frequencyUnit
         };
-        console.log(" sendProductsInEachMinute 4444444 ");
+        console.log(shop_information1," sendProductsInEachMinute 4444444 ");
         await axiosInstance.post("/store-product", { shop_information: shop_information1, productData: filteredData });
 
         console.log(" sendProductsInEachMinute 55555555 ");
@@ -105,7 +105,7 @@ const sendProductsInEachMinute = async (shop, accessToken, emailConfig) => {
 
 
     } catch (error) {
-        console.log(error, "::error");
+        // console.log(error, "::error");
     }
 };
 
@@ -168,15 +168,15 @@ export const loader = async ({ request }) => {
         const { shop, accessToken } = session;
         const emailConfig = await prisma.emailConfiguration.findFirst({ where: { shop } });
         if (emailConfig) {
+            setTimeout(async () => {
+                await sendProductsInEachMinute(shop, accessToken, emailConfig);
+            }, 4000)
             cron.schedule('* * * * *', async () => {
-                setTimeout(async () => {
-                    await sendProductsInEachMinute(shop, accessToken, emailConfig);
-                }, 4000)
             });
         }
         return ({ shop, emailConfig });
     } catch (error) {
-        console.log(error, "ThisIsError");
+        // console.log(error, "ThisIsError");
         return null;
     }
 };
@@ -249,7 +249,7 @@ export const action = async ({ request }) => {
         sendProducts(session.shop, session.accessToken, emailConfig, true)
         return json({ message: "Form submitted successfully!" });
     } catch (error) {
-        console.error("Error saving email configuration:", error);
+        // console.error("Error saving email configuration:", error);
 
         return json({ message: "An error occurred while saving the configuration." }, { status: 500 });
     }

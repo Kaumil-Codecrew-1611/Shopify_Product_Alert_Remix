@@ -11,7 +11,6 @@ const axiosInstance = axios.create({
         'Access-Token': accessToken
     },
 });
-console.log(baseURL,"baseURL")
 
 // Add a request interceptor
 axiosInstance.interceptors.request.use(
