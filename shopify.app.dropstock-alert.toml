@@ -1,0 +1,38 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "caeb5eb018bb3245bf27352c085e5024"
+name = "DropStock Alert"
+handle = "dropstock-alert-7"
+application_url = "https://alert-app.fly.dev"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = false
+dev_store_url = "alert-app.myshopify.com"
+include_config_on_deploy = true
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_products,write_products"
+
+[auth]
+redirect_urls = [
+  "https://alert-app.fly.dev/auth/callback",
+  "https://alert-app.fly.dev/auth/shopify/callback",
+  "https://alert-app.fly.dev/api/auth/callback"
+]
+
+[webhooks]
+api_version = "2024-04"
+
+  [webhooks.privacy_compliance]
+  customer_deletion_url = "https://alert-app.fly.dev/api/webhooks"
+  customer_data_request_url = "https://alert-app.fly.dev/api/webhooks"
+  shop_deletion_url = "https://alert-app.fly.dev/api/webhooks"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "https://alert-app.fly.dev/api/webhooks"
+
+[pos]
+embedded = false
