@@ -65,10 +65,14 @@
 .Polaris-Text--root.Polaris-Text--bodyMd.Polaris-Text--regular,
 .Polaris-Text--root.Polaris-Text--headingSm.Polaris-Text--bold,
 .Polaris-Button .Polaris-Text--root.Polaris-Text--bodySm.Polaris-Text--medium,
-.Polaris-Layout__Section >*{
+.Polaris-Layout__Section>* {
     font-size: 16px !important;
 }
 
-.Polaris-Frame__Scrollable{
+.Polaris-Frame__Scrollable {
     width: unset !important;
+}
+
+.Polaris-FullscreenBar {
+    box-shadow: var(--p-shadow-200)
 }
