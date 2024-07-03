@@ -286,7 +286,7 @@ export default function Index() {
                                             name="threshold"
                                             type="number"
                                             autoComplete="off"
-                                            placeholder="5"
+                                            placeholder="e.g. 5"
                                             value={formDataSaved?.threshold || ""}
                                             onChange={handleFormChange("threshold")}
                                             error={errors.threshold}
@@ -300,7 +300,7 @@ export default function Index() {
                                             name="frequency"
                                             type="number"
                                             autoComplete="off"
-                                            placeholder="1"
+                                            placeholder="e.g. 1"
                                             value={formDataSaved?.frequency || ""}
                                             onChange={handleFormChange("frequency")}
                                             error={errors.frequency}
@@ -311,7 +311,6 @@ export default function Index() {
                                                         labelHidden
                                                         name="frequencyUnit"
                                                         options={[
-                                                            { label: "Please select", value: "", disabled: true },
                                                             { label: "Minutes", value: "minute" },
                                                             { label: "Hours", value: "hour" },
                                                             { label: "Days", value: "day" },
